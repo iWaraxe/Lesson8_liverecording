@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="Lesson8_liverecording" />
+        <module name="Lesson8_template" />
+        <module name="Lesson7_template" />
+        <module name="Lesson7_general_repetition" />
+        <module name="Lesson5_live copy" />
+        <module name="Lesson8_general_repetition" />
+        <module name="Lesson7_liverecording" />
+        <module name="Lesson5_live" />
+      </profile>
+    </annotationProcessing>
+  </component>
+</project>
