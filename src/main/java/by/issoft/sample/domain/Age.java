@@ -1,4 +1,4 @@
-package by.issoft.sample;
+package by.issoft.sample.domain;
 
 import java.util.HashMap;
 import java.util.Map;

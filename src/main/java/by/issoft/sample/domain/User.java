@@ -1,9 +1,8 @@
 package by.issoft.sample.domain;
 
-import by.issoft.sample.Age;
+import lombok.*;
 
-public class User {
-
+public class User implements Comparable<User> {
     private String id;
     private final String username;
 
@@ -13,18 +12,11 @@ public class User {
     private Age age;
 
     private UserStatus status;
-
     private UserRole userRole;
 
     //constructor
     public User(String username) {
         this.username = username;
-    }
-
-    public User(String username, String firstName, String lastName) {
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
     }
 
     //getters & setters
@@ -68,7 +60,7 @@ public class User {
         this.lastName = lastName;
     }
 
-    public void setAge(Age age) {
+    public void setAge(by.issoft.sample.domain.Age age) {
         this.age = age;
     }
 
@@ -79,5 +71,12 @@ public class User {
     public void setUserRole(UserRole userRole) {
         this.userRole = userRole;
     }
+
+    @Override
+    public int compareTo(User other) {
+        return this.getUsername().compareTo(other.getUsername());
+    }
+
+
 }
 

@@ -1,6 +1,6 @@
 package by.issoft.sample.persistence;
 
-import by.issoft.sample.Age;
+import by.issoft.sample.domain.Age;
 import by.issoft.sample.domain.User;
 import org.junit.jupiter.api.Test;
 

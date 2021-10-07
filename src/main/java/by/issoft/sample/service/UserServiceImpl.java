@@ -3,6 +3,7 @@ package by.issoft.sample.service;
 import by.issoft.sample.domain.User;
 import by.issoft.sample.persistence.UserStorage;
 
+import java.util.List;
 import java.util.Optional;
 
 import static by.issoft.sample.domain.UserStatus.ACTIVE;
@@ -42,6 +43,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findById(String id) {
         return userStorage.load(id);
+    }
+
+    public List<User> loadAll() {
+        return List.of();
     }
 
 }

@@ -1,91 +1,138 @@
 package by.issoft.sample;
 
-import by.issoft.sample.domain.*;
-import by.issoft.sample.persistence.InMemoryUserStorage;
-import by.issoft.sample.persistence.UserStorage;
-import by.issoft.sample.persistence.UserStorageCountingDecorator;
-import by.issoft.sample.persistence.UserTimeLimitedCache;
-import by.issoft.sample.service.UserService;
-import by.issoft.sample.service.UserServiceImpl;
-import by.issoft.sample.service.UserValidator;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.InvocationTargetException;
-import java.time.LocalDate;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+@Slf4j
 public class Runner {
-    public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, InterruptedException {
+    static Statistics statistics = new Statistics();
 
-        UserValidator userValidator = new UserValidator();
-        UserStorage userStorage = new InMemoryUserStorage();
+    public static void main(String[] args) throws InterruptedException {
 
-        UserStorageCountingDecorator counter = new UserStorageCountingDecorator(userStorage);
+        final BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(1024);
 
-        UserStorage cache = new UserTimeLimitedCache(100, counter);
+        final List<Producer> producers = IntStream.range(0, 2)
+                .mapToObj(i -> new Producer(queue))
+                .collect(Collectors.toList());
+        producers.forEach(Thread::start);
 
-        //decorator, proxy, chain of responsibilities
-        UserService userService = new UserServiceImpl(cache ,userValidator);
+        final List<Consumer> consumers = IntStream.range(0, 20)
+                .mapToObj(i -> new Consumer(queue))
+                .collect(Collectors.toList());
+        consumers.forEach(Thread::start);
 
-        final String id = userService.createUser(new User("vpupkin", "vasya", "pupkin"));
-
-        System.out.println(userService.findById(id));
-        System.out.println(userService.findById(id));
-        System.out.println(userService.findById(id));
-        TimeUnit.MILLISECONDS.sleep(100);
-        System.out.println(userService.findById(id));
-        System.out.println(userService.findById(id));
-
-        System.out.println(counter.getUsages());
-   }
-}
-
-class A {
-    private final M1Provider m1Provider;
-
-    protected A(M1Provider m1Provider) {
-        this.m1Provider = m1Provider;
     }
 
-    public void businessLogic() {
-        //
-        //
-        //
-        int i = m1Provider.m1();
-        //
-        //use i
+    public static void methodC() {
+        statistics.incrementNumberOfMethodCExecutions();
     }
-
 }
 
-interface M1Provider {
-    int I = 1;
-    int m1();
+class Statistics {
+    @Getter
+    private int numberOfMethodCExecutions;
+
+    public synchronized void incrementNumberOfMethodCExecutions() {
+        int k = numberOfMethodCExecutions + 1;
+        numberOfMethodCExecutions = k;
+    }
 }
 
-class B implements M1Provider {
+@Slf4j
+@RequiredArgsConstructor
+class StatisticsOutputWriter extends Thread {
+    private final Statistics statistics;
+    private final int rateInSeconds;
+    private boolean needRun = true;
+    private boolean paused = false;
+
+    @SneakyThrows
     @Override
-    public int m1() {
-        return 42;
+    public void run() {
+        while (needRun) {
+            checkIfPausedAndWait();
+            log.info("C executed {} time", statistics.getNumberOfMethodCExecutions());
+            TimeUnit.SECONDS.sleep(rateInSeconds);
+        }
+    }
+
+    public void finish() {
+        log.info("finished");
+        needRun = false;
+    }
+
+    private synchronized void waitUntilResume() throws InterruptedException {
+        this.wait();
+    }
+
+    private void checkIfPausedAndWait() throws InterruptedException {
+        while (paused) {
+            waitUntilResume();
+        }
+    }
+
+    public void pause() {
+        log.info("paused");
+        paused = true;
+    }
+
+    public synchronized void unpause() {
+        log.info("unpaused");
+        paused = false;
+        this.notify();
     }
 }
 
-class C implements M1Provider {
+@Slf4j
+class Producer extends Thread {
+    private final BlockingQueue<Integer> queue;
 
+    public Producer(BlockingQueue<Integer> queue) {
+        this.queue = queue;
+    }
+
+    @SneakyThrows
     @Override
-    public int m1() {
-        return 41;
+    public void run() {
+        while (true) {
+            synchronized (queue) {
+                log.info("producing");
+                IntStream.range(0, 30).forEach(i -> {
+                    queue.offer(new Random().nextInt());
+                    queue.notifyAll();
+                });
+            }
+            Thread.sleep(10_000);
+        }
     }
 }
 
+@Slf4j
+class Consumer extends Thread {
+    private final BlockingQueue<Integer> queue;
 
+    public Consumer(BlockingQueue<Integer> queue) {
+        this.queue = queue;
+    }
 
-
-
-
-
-
-
-
-
-
+    @SneakyThrows
+    @Override
+    public void run() {
+        while (true) {
+            Integer element = queue.take();
+            log.info("polled = {}", element);
+        }
+    }
+}
